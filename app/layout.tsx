@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import Link from "next/link"
@@ -11,22 +10,10 @@ export const metadata: Metadata = {
   title: "Análise Omie | IA para Cosméticos",
   description: "Inteligência de Negócios para o setor de cosméticos, integrada ao Omie.",
     generator: 'v0.app'
-=======
-import type { Metadata } from 'next'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
-import './globals.css'
-
-export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
->>>>>>> 65d2b9e36e4ef2acc0e7973770c6d00969411d49
 }
 
 export default function RootLayout({
   children,
-<<<<<<< HEAD
 }: {
   children: React.ReactNode
 }) {
@@ -90,23 +77,6 @@ export default function RootLayout({
           </div>
         </div>
       </body>
-=======
-}: Readonly<{
-  children: React.ReactNode
-}>) {
-  return (
-    <html lang="en">
-      <head>
-        <style>{`
-html {
-  font-family: ${GeistSans.style.fontFamily};
-  --font-sans: ${GeistSans.variable};
-  --font-mono: ${GeistMono.variable};
-}
-        `}</style>
-      </head>
-      <body>{children}</body>
->>>>>>> 65d2b9e36e4ef2acc0e7973770c6d00969411d49
     </html>
   )
 }
