@@ -29,11 +29,12 @@ export async function GET(request: NextRequest) {
     const { omie_app_key: appKey, omie_app_secret: appSecret } = config
 
     // --- 2. Buscar dados da Omie (Exemplo: Contas a Receber) ---
+    // CORREÇÃO: Removido o parâmetro 'apenas_titulos_em_aberto' que causava o erro.
     const omiePayload = {
       call: "ListarContasReceber",
       app_key: appKey,
       app_secret: appSecret,
-      param: [{ pagina: 1, registros_por_pagina: 100, apenas_titulos_em_aberto: "N" }],
+      param: [{ pagina: 1, registros_por_pagina: 100 }],
     }
 
     console.log("A buscar dados de Contas a Receber na Omie...")
@@ -64,7 +65,6 @@ export async function GET(request: NextRequest) {
 
       console.log(`A inserir/atualizar ${dadosFormatados.length} registos na tabela 'vendas'...`);
       
-      // O 'upsert' insere novos registos ou atualiza os existentes se o 'codigo_lancamento_omie' já existir.
       const { error: upsertError } = await supabase
         .from("vendas")
         .upsert(dadosFormatados, { onConflict: 'codigo_lancamento_omie' });
