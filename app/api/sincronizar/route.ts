@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
     const { omie_app_key: appKey, omie_app_secret: appSecret } = config
 
     // --- 2. Buscar dados da Omie (Exemplo: Contas a Receber) ---
-    // CORREÇÃO: Removido o parâmetro 'apenas_titulos_em_aberto' que causava o erro.
     const omiePayload = {
       call: "ListarContasReceber",
       app_key: appKey,
@@ -55,22 +54,25 @@ export async function GET(request: NextRequest) {
 
     // --- 3. Formatar e Guardar os dados no Supabase ---
     if (contasReceber && contasReceber.length > 0) {
+      // CORREÇÃO: Usando os nomes exatos das colunas da sua base de dados
       const dadosFormatados = contasReceber.map((conta: any) => ({
-        codigo_lancamento_omie: conta.codigo_lancamento,
-        codigo_cliente_omie: conta.codigo_cliente_fornecedor,
-        valor_documento: conta.valor_documento,
-        data_vencimento: conta.data_vencimento,
+        codigo_lancar: conta.codigo_lancamento,
+        codigo_cliente: conta.codigo_cliente_fornecedor,
+        valor_docume: conta.valor_documento,
+        data_vencime: conta.data_vencimento,
         data_emissao: conta.data_emissao,
       }));
 
       console.log(`A inserir/atualizar ${dadosFormatados.length} registos na tabela 'vendas'...`);
       
-      const { error: upsertError } = await supabase
+      // O 'upsert' agora precisa de saber qual coluna usar para detetar conflitos.
+      // Como não temos um ID único da Omie na tabela 'vendas' com o nome correto, usaremos 'insert' por agora.
+      const { error: insertError } = await supabase
         .from("vendas")
-        .upsert(dadosFormatados, { onConflict: 'codigo_lancamento_omie' });
+        .insert(dadosFormatados);
 
-      if (upsertError) {
-        console.error("Erro ao guardar dados no Supabase:", upsertError);
+      if (insertError) {
+        console.error("Erro ao guardar dados no Supabase:", insertError);
         throw new Error("Falha ao guardar os dados de vendas na base de dados.");
       }
 
