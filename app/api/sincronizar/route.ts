@@ -1,8 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
+// Função para converter data de dd/mm/aaaa para aaaa-mm-dd
+const formatDateToISO = (dateString: string) => {
+  if (!dateString || typeof dateString !== 'string') return null;
+  const parts = dateString.split('/');
+  if (parts.length !== 3) return null;
+  const [day, month, year] = parts;
+  return `${year}-${month}-${day}`;
+};
+
 // Esta API será o nosso "motor" de sincronização de dados.
-// No futuro, ela será acionada automaticamente por um Cron Job.
 export async function GET(request: NextRequest) {
   try {
     console.log("Iniciando processo de sincronização...")
@@ -54,25 +62,24 @@ export async function GET(request: NextRequest) {
 
     // --- 3. Formatar e Guardar os dados no Supabase ---
     if (contasReceber && contasReceber.length > 0) {
-      // CORREÇÃO: Usando os nomes exatos das colunas da sua base de dados
+      // Versão final com os nomes de colunas padronizados
       const dadosFormatados = contasReceber.map((conta: any) => ({
-        codigo_lancar: conta.codigo_lancamento,
-        codigo_cliente: conta.codigo_cliente_fornecedor,
-        valor_docume: conta.valor_documento,
-        data_vencime: conta.data_vencimento,
-        data_emissao: conta.data_emissao,
+        codigo_lancamento_omie: conta.codigo_lancamento,
+        codigo_cliente_omie: conta.codigo_cliente_fornecedor,
+        valor_documento: conta.valor_documento,
+        data_vencimento: formatDateToISO(conta.data_vencimento),
+        data_emissao: formatDateToISO(conta.data_emissao),
       }));
 
       console.log(`A inserir/atualizar ${dadosFormatados.length} registos na tabela 'vendas'...`);
       
-      // O 'upsert' agora precisa de saber qual coluna usar para detetar conflitos.
-      // Como não temos um ID único da Omie na tabela 'vendas' com o nome correto, usaremos 'insert' por agora.
-      const { error: insertError } = await supabase
+      // O 'upsert' insere novos registos ou atualiza os existentes se o 'codigo_lancamento_omie' já existir.
+      const { error: upsertError } = await supabase
         .from("vendas")
-        .insert(dadosFormatados);
+        .upsert(dadosFormatados, { onConflict: 'codigo_lancamento_omie' });
 
-      if (insertError) {
-        console.error("Erro ao guardar dados no Supabase:", insertError);
+      if (upsertError) {
+        console.error("Erro ao guardar dados no Supabase:", upsertError);
         throw new Error("Falha ao guardar os dados de vendas na base de dados.");
       }
 
@@ -85,7 +92,8 @@ export async function GET(request: NextRequest) {
       registros_processados: contasReceber.length,
     })
 
-  } catch (error: any) {
+  } catch (error: any)
+  {
     console.error("Falha no processo de sincronização:", error)
     return NextResponse.json({ success: false, message: error.message || "Erro interno do servidor." }, { status: 500 })
   }
